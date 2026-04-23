@@ -9,5 +9,5 @@ connectDB();
 const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
-  console.log(`Example app listening on : http://localhost:${port}`);
+  console.log(`App listening on : http://localhost:${port}`);
 });
