@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
         localPath: "",
       },
     },
-    userName: {
+    username: {
       type: String,
       required: true,
       unique: true,
@@ -54,6 +54,9 @@ const userSchema = new mongoose.Schema(
     emailVeirficationToken: {
       type: String,
     },
+    emailVerificationExpiry: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
@@ -61,11 +64,10 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified(this.password)) next();
+  if (!this.isModified("password")) return;
 
   //if password is modified then hash the password and save it in db
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 userSchema.methods.comparePassword = async function (password) {
