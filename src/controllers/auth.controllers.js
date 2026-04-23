@@ -2,10 +2,12 @@ import { User } from "../models/user.models.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { ApiError } from "../utils/api-errors.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { emailVerificationMailgenContent, sendEmail } from "../utils/mail.js";
+import { emailVerificationMailgenContent } from "../utils/mail.js";
+import { sendMail } from "../utils/mail.js";
+
 const generateAccessTokenAndRefreshToken = async (userId) => {
   try {
-    const user = await User.findById({ userId });
+    const user = await User.findById(userId);
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
     user.refreshToken = refreshToken;
@@ -20,6 +22,7 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
+  console.log("register controller called");
   const { email, username, password, role } = req.body;
 
   const isUserExist = await User.findOne({
@@ -45,17 +48,17 @@ const registerUser = asyncHandler(async (req, res) => {
 
   await user.save({ validateBeforeSave: false });
 
-  await sendEmail({
+  await sendMail({
     email: user?.email,
     subject: "Please verify your email",
-    mailGenContent: emailVerificationMailgenContent(
+    mailgenContent: emailVerificationMailgenContent(
       user.username,
       `${req.protocol}://${req.get("host")}/api/v1/users/verify-email/${unHashedToken}`,
     ),
   });
   //.find dont want password refreshToken  emailVeirficationToken emailVerificationExpiry
 
-  await User.find(user._id).select(
+  const createdUser = await User.findById(user._id).select(
     "-password -refreshToken -emailVeirficationToken -emailVerificationExpiry",
   );
 
