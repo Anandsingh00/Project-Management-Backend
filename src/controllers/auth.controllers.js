@@ -14,7 +14,7 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
     await user.save({ validateBeforeSave: false });
     return { accessToken, refreshToken };
   } catch (error) {
-    throw new ApiError( 
+    throw new ApiError(
       500,
       "Something went wrong while generating access token and refresh Token",
     );
@@ -77,4 +77,55 @@ const registerUser = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerUser };
+const loginUser = asyncHandler(async (req, res) => {
+  const { username, email, password } = req.body;
+
+  if (!email) {
+    throw new ApiError(401, "Email is required");
+  }
+
+  const user = await User.findOne({ email: email });
+
+  if (!user) {
+    throw new ApiError(
+      400,
+      "User doesn't exist with this email.Please Register",
+    );
+  }
+
+  const isPasswordValid = await user.comparePassword(password);
+
+  if (!isPasswordValid) {
+    throw new ApiError(400, "Password is incorrect");
+  }
+
+  const { accessToken, refreshToken } =
+    await generateAccessTokenAndRefreshToken(user._id);
+
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken -emailVeirficationToken -emailVerificationExpiry",
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: loggedInUser,
+          accessToken,
+          refreshToken,
+        },
+        "user Login successfully",
+      ),
+    );
+});
+
+export { registerUser, loginUser };
