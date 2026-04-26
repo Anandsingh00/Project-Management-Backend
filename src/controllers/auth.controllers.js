@@ -8,10 +8,11 @@ import { sendMail } from "../utils/mail.js";
 const generateAccessTokenAndRefreshToken = async (userId) => {
   try {
     const user = await User.findById(userId);
-    const accessToken = user.generateAccessToken();
-    const refreshToken = user.generateRefreshToken();
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
+
     return { accessToken, refreshToken };
   } catch (error) {
     throw new ApiError(
@@ -22,7 +23,6 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  console.log("register controller called");
   const { email, username, password, role } = req.body;
 
   const isUserExist = await User.findOne({
@@ -41,7 +41,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   const { unHashedToken, hashedToken, tokenExpiry } =
-    user.generateTemporaryToken();
+    await user.generateTemporaryToken();
 
   user.emailVeirficationToken = unHashedToken;
   user.emailVerificationExpiry = tokenExpiry;
@@ -78,13 +78,14 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
+  console.log("Login controller called");
   const { username, email, password } = req.body;
 
   if (!email) {
     throw new ApiError(401, "Email is required");
   }
 
-  const user = await User.findOne({ email: email });
+  const user = await User.findOne({ email });
 
   if (!user) {
     throw new ApiError(
@@ -101,6 +102,10 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const { accessToken, refreshToken } =
     await generateAccessTokenAndRefreshToken(user._id);
+
+  console.log(
+    `Recieved- Refresh Token: ${refreshToken} Access Token: ${accessToken}`,
+  );
 
   const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken -emailVeirficationToken -emailVerificationExpiry",
