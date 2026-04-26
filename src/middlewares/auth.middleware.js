@@ -1,9 +1,9 @@
 import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/api-errors.js";
-import { asyncHandler } from "../utils/api-response.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 
-export const verifyJWT = asyncHandler(async (req, res, next) => {
+const verifyJWT = asyncHandler(async (req, res, next) => {
   const token =
     req.cookies?.accessToken ||
     req.header("Authorization")?.replace("Bearer ", "");
@@ -25,5 +25,10 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
 
     req.user = user;
     next();
-  } catch (error) {}
+  } catch (error) {
+    console.log(`Error in auth middleware: ${error.message}`);
+    return new ApiError(501, "Something went wrong in auth middleware");
+  }
 });
+
+export { verifyJWT };
