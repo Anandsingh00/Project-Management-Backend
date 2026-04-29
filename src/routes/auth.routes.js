@@ -31,7 +31,7 @@ router.route("/login").post(loginUser);
 
 router.route("/verify-email/:verificationToken").get(verifyEmail);
 
-router.route("/refresh-token").get(refreshAccessToken);
+router.route("/refresh-token").post(refreshAccessToken);
 
 router
   .route("/forgot-password")
