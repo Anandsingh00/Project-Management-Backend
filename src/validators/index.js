@@ -23,7 +23,18 @@ const userRegistrationValidator = () => {
     body("fullName").optional().trim(),
   ];
 };
-// need to add userLoginValidator
+
+const userLoginValidator = () => {
+  return [
+    body("email")
+      .trim()
+      .notEmpty()
+      .withMessage("Email is required")
+      .isEmail()
+      .withMessage("Email is invalid"),
+    body("password").trim().notEmpty().withMessage("Password is required"),
+  ];
+};
 
 const userChangeCurrentPasswordValidator = () => {
   return [
@@ -47,6 +58,7 @@ const userResetForgotPasswordValidator = () => {
 };
 export {
   userRegistrationValidator,
+  userLoginValidator,
   userChangeCurrentPasswordValidator,
   userForgotPasswordValidator,
   userResetForgotPasswordValidator,
