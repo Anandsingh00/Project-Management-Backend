@@ -64,7 +64,7 @@ const getProject = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, projects, "Projects Fetched successfully"));
 });
 
-const createdProject = asyncHandler(async (req, res) => {
+const createProject = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
 
   const project = await Project.create({
@@ -272,7 +272,7 @@ const deleteMember = asyncHandler(async (req, res) => {
 
 export {
   getProject,
-  createdProject,
+  createProject,
   getProjectById,
   getProjectMembers,
   updateProject,
