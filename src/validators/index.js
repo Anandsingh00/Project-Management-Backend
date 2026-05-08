@@ -60,13 +60,13 @@ const userResetForgotPasswordValidator = () => {
 const createProjectValidator = () => {
   return [
     body("name").notEmpty().withMessage("Name is required"),
-    boody("description").optional(),
+    body("description").optional(),
   ];
 };
 
 const addMemberToProjectValidator = () => {
   return [
-    boody("email")
+    body("email")
       .notEmpty()
       .withMessage("Email is required")
       .isEmail()
