@@ -159,21 +159,8 @@ const updateTask = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Task not found");
   }
 
-  if (assigneeId) {
-    const isAssigneePartOfProject = await ProjectMember.findOne({
-      user: assigneeId,
-      project: task.project,
-    });
-
-    if (!isAssigneePartOfProject) {
-      throw new ApiError(400, "Assignee must be a member of the project");
-    }
-
-    task.assignedTo = assigneeId;
-  }
-
-  if (title !== undefined) task.title = title;
-  if (description !== undefined) task.description = description;
+  task.title = title;
+  task.description = description;
 
   //check if req.status is a valid status or not
   if (!AvailableTaskStatuses.includes(status)) {
@@ -211,24 +198,6 @@ const createSubTask = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Task not found");
   }
 
-  // Authorization
-  if (req.user.role === UserRolesEnum.MEMBER) {
-    if (task.assignedTo.toString() !== req.user._id.toString()) {
-      throw new ApiError(403, "Not allowed to create subtask");
-    }
-  }
-
-  if (assigneeId) {
-    const isAssigneePartOfProject = await ProjectMember.findOne({
-      user: assigneeId,
-      project: task.project,
-    });
-
-    if (!isAssigneePartOfProject) {
-      throw new ApiError(400, "Assignee must be a member of the project");
-    }
-  }
-
   const subTask = await SubTask.create({
     title,
     task: taskId,
@@ -242,44 +211,15 @@ const createSubTask = asyncHandler(async (req, res) => {
 const deleteSubTask = asyncHandler(async (req, res) => {
   const { subTaskId } = req.params;
 
-  const subTask = await SubTask.findById(subTaskId);
-  if (!subTask) {
-    throw new ApiError(404, "Subtask not found");
+  const subtask = await SubTask.findByIdAndDelete(subTaskId);
+
+  if (!subtask) {
+    throw new ApiError(404, "Sub-task not found");
   }
-
-  // get parent task
-  const task = await Task.findById(subTask.task);
-  if (!task) {
-    throw new ApiError(404, "Parent task not found");
-  }
-
-  // check project membership
-  const projectMember = await ProjectMember.findOne({
-    user: req.user._id,
-    project: task.project,
-  });
-
-  if (!projectMember) {
-    throw new ApiError(403, "You are not part of this project");
-  }
-
-  // authorization
-  if (projectMember.role === UserRolesEnum.MEMBER) {
-    const isCreator = subTask.createdBy.toString() === req.user._id.toString();
-
-    const isAssignedToParent =
-      task.assignedTo?.toString() === req.user._id.toString();
-
-    if (!isCreator && !isAssignedToParent) {
-      throw new ApiError(403, "Not allowed to delete this subtask");
-    }
-  }
-
-  await subTask.deleteOne();
 
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, "Subtask deleted successfully"));
+    .json(new ApiResponse(200, subtask, "Subtask deleted successfully"));
 });
 
 const updateSubTask = asyncHandler(async (req, res) => {
@@ -295,36 +235,9 @@ const updateSubTask = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Subtask not found");
   }
 
-  // get parent task
-  const task = await Task.findById(subTask.task);
-  if (!task) {
-    throw new ApiError(404, "Parent task not found");
-  }
-
-  // check project membership
-  const projectMember = await ProjectMember.findOne({
-    user: req.user._id,
-    project: task.project,
-  });
-
-  if (!projectMember) {
-    throw new ApiError(403, "You are not part of this project");
-  }
-
-  if (projectMember.role === UserRolesEnum.MEMBER) {
-    const isCreator = subTask.createdBy.toString() === req.user._id.toString();
-
-    const isAssignedToParent =
-      task.assignedTo?.toString() === req.user._id.toString();
-
-    if (!isCreator && !isAssignedToParent) {
-      throw new ApiError(403, "Not allowed to update this subtask");
-    }
-  }
-
   // update fields
-  if (title !== undefined) subTask.title = title;
-  if (isCompleted !== undefined) subTask.isCompleted = isCompleted;
+  subTask.title = title;
+  subTask.isCompleted = isCompleted;
 
   await subTask.save();
 
