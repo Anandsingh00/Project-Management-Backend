@@ -1,4 +1,3 @@
-import { User } from "../models/user.models";
 import { Project } from "../models/project.models";
 import { Task } from "../models/task.models.js";
 import { SubTask } from "../models/subtask.models.js";
@@ -6,15 +5,14 @@ import { ApiResponse } from "../utils/api-response.js";
 import { ApiError } from "../utils/api-errors.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import mongoose from "mongoose";
-import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
-import { ProjectMember } from "../models/projectmember.models";
 import { AvailableTaskStatuses } from "../utils/constants.js";
 
 const getTask = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
 
   const project = await Project.findById(projectId);
-  if (!projectId) {
+
+  if (!project) {
     throw new ApiError(404, "Project Not Found");
   }
 
@@ -23,7 +21,7 @@ const getTask = asyncHandler(async (req, res) => {
   }).populate("assignedTo", "avatar username email");
 
   return res
-    .status(201)
+    .status(200)
     .json(new ApiResponse(201, fetchedTask, "Task Fetched Successfully"));
 });
 
@@ -32,7 +30,7 @@ const createTask = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
 
   const project = await Project.findById(projectId);
-  if (!projectId) {
+  if (!project) {
     throw new ApiError(404, "Project Not Found");
   }
 
@@ -79,10 +77,12 @@ const getTaskById = asyncHandler(async (req, res) => {
         as: "assignedTo",
         pipeline: [
           {
-            _id: 1,
-            username: 1,
-            fullName: 1,
-            avatar: 1,
+            $project: {
+              _id: 1,
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
           },
         ],
       },
@@ -136,7 +136,7 @@ const getTaskById = asyncHandler(async (req, res) => {
   }
 
   return res
-    .status(201)
+    .status(200)
     .json(new ApiResponse(201, task[0], "task fetched successfully"));
 });
 
@@ -159,12 +159,13 @@ const updateTask = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Task not found");
   }
 
-  task.title = title;
-  task.description = description;
+  if (title !== undefined) task.title = title;
+  if (description !== undefined) task.description = description;
+  if (status !== undefined) task.status = status;
 
   //check if req.status is a valid status or not
-  if (!AvailableTaskStatuses.includes(status)) {
-    throw new ApiError(404, "Status is invalid");
+  if (status !== undefined && !AvailableTaskStatuses.includes(status)) {
+    throw new ApiError(400, "Status is invalid");
   }
 
   task.status = status;
@@ -172,7 +173,7 @@ const updateTask = asyncHandler(async (req, res) => {
   await task.save();
 
   return res
-    .stats(200)
+    .status(200)
     .json(new ApiResponse(200, task, "Task updated successfully"));
 });
 
@@ -241,7 +242,9 @@ const updateSubTask = asyncHandler(async (req, res) => {
 
   await subTask.save();
 
-  return res.status(200);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, subTask, "Subtask updated successfully"));
 });
 
 export {
