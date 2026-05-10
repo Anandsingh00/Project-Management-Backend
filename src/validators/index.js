@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 import { AvailableUserRole } from "../utils/constants.js";
 const userRegistrationValidator = () => {
   return [
@@ -78,6 +78,51 @@ const addMemberToProjectValidator = () => {
       .withMessage("Role is invalid"),
   ];
 };
+
+const createTaskValidator = () => {
+  return [
+    body("title").notEmpty().withMessage("Title is required"),
+    body("description").optional(),
+    body("assigneeId").optional(),
+    param("projectId").notEmpty().withMessage("Project id is required"),
+  ];
+};
+const updateTaskValidator = () => {
+  return [
+    body("title").optional().notEmpty().withMessage("Title cannot be empty"),
+
+    body("description").optional(),
+
+    body("status")
+      .optional()
+      .isIn(AvailableTaskStatuses)
+      .withMessage("Invalid task status"),
+
+    body("assigneeId").optional(),
+
+    param("taskId").notEmpty().withMessage("Task id is required"),
+  ];
+};
+
+const createSubTaskValidator = () => {
+  return [
+    body("title").notEmpty().withMessage("Title is required"),
+
+    param("taskId").notEmpty().withMessage("Task id is required"),
+  ];
+};
+const updateSubTaskValidator = () => {
+  return [
+    body("title").optional().notEmpty().withMessage("Title cannot be empty"),
+
+    body("isCompleted")
+      .optional()
+      .isBoolean()
+      .withMessage("isCompleted must be boolean"),
+
+    param("subTaskId").notEmpty().withMessage("Subtask id is required"),
+  ];
+};
 export {
   userRegistrationValidator,
   userLoginValidator,
@@ -86,4 +131,8 @@ export {
   userResetForgotPasswordValidator,
   createProjectValidator,
   addMemberToProjectValidator,
+  createTaskValidator,
+  updateTaskValidator,
+  createSubTaskValidator,
+  updateSubTaskValidator,
 };
