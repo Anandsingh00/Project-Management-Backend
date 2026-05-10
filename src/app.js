@@ -29,6 +29,8 @@ app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/projects", projectRouter);
 
+app.use("/images", express.static("public/images"));
+
 app.get("/home", (req, res) => {
   res.send("HOME ROUTE");
 });
